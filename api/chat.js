@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 
 const cache = new Map();
+const stats = { l0: 0, l2: 0, l3: 0, l4_gate: 0, l4_groq: 0, l4_error: 0 };
 
 const HARD = /\b(prove|legal|lawsuit|hipaa|medical diagnos|multi-step|architect|refactor|prove that|why does|compare and|derive)\b/i;
 const EMAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -58,6 +59,10 @@ async function groq(prompt, key) {
 }
 
 module.exports = async (req, res) => {
+  if (req.method === 'GET') {
+    res.status(200).json({ stats, cache_size: cache.size });
+    return;
+  }
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'POST only' });
     return;
@@ -72,6 +77,7 @@ module.exports = async (req, res) => {
 
   const h = crypto.createHash('sha256').update(message + '|' + localOnly).digest('hex');
   if (cache.has(h)) {
+    stats.l0 += 1;
     res.status(200).json({ layer: 'L0 cache', answer: cache.get(h) + '\n\n_[cached]_' });
     return;
   }
@@ -81,6 +87,7 @@ module.exports = async (req, res) => {
   if (!a.escalate) {
     const ans = restore(a.text, map);
     cache.set(h, ans);
+    stats.l2 += 1;
     res.status(200).json({ layer: 'L2 Twin-A', answer: ans });
     return;
   }
@@ -89,6 +96,7 @@ module.exports = async (req, res) => {
   if (!b.escalate) {
     const ans = restore(b.text, map);
     cache.set(h, ans);
+    stats.l3 += 1;
     res.status(200).json({ layer: 'L3 Twin-B', answer: ans });
     return;
   }
@@ -96,6 +104,7 @@ module.exports = async (req, res) => {
   const key = process.env.GROQ_API_KEY;
   if (localOnly || !key) {
     const ans = 'L4 blocked — LOCAL_ONLY or no GROQ_API_KEY on this host. Rephrase smaller, or set the key and turn LOCAL_ONLY off.';
+    stats.l4_gate += 1;
     res.status(200).json({ layer: 'L4 gate', answer: ans });
     return;
   }
@@ -104,8 +113,10 @@ module.exports = async (req, res) => {
     const big = await groq(scrubbed, key);
     const ans = restore(big, map) + '\n\n_[escalated]_';
     cache.set(h, ans);
+    stats.l4_groq += 1;
     res.status(200).json({ layer: 'L4 Groq', answer: ans });
   } catch (e) {
+    stats.l4_error += 1;
     res.status(200).json({ layer: 'L4 error', answer: String(e.message || e) });
   }
 };

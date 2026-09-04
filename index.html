@@ -31,7 +31,11 @@
 <body>
   <header>
     <div class="brand">TWIN <span>v1</span></div>
-    <div style="font-size:12px;color:var(--muted)"><span class="pulse"></span>cache · A/B gates · escalate last</div>
+    <div style="font-size:12px;color:var(--muted);display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+      <span><span class="pulse"></span>cache · A/B · escalate last</span>
+      <a href="/savings.html" style="color:#00ff41">savings</a>
+      <span id="hits"></span>
+    </div>
   </header>
   <main>
     <p class="sub">Week 1 demo. No GPU on this URL. Easy questions stop at Twin A. Hard ones consult Twin B. Escalation only if a Groq key is set on the host. PII-shaped strings are masked before any outbound path.</p>
@@ -57,6 +61,15 @@
       log.appendChild(d);
       d.scrollIntoView({ behavior: 'smooth' });
     }
+    async function refreshHits() {
+      try {
+        const s = await (await fetch('/api/chat')).json();
+        const st = s.stats || {};
+        document.getElementById('hits').textContent =
+          `L0 ${st.l0||0} · L2 ${st.l2||0} · L3 ${st.l3||0} · L4 ${st.l4_gate||0}/${st.l4_groq||0}`;
+      } catch (_) {}
+    }
+    refreshHits();
     f.addEventListener('submit', async (e) => {
       e.preventDefault();
       const text = q.value.trim();
@@ -72,6 +85,7 @@
         });
         const data = await r.json();
         add('bot', data.layer || 'twin', data.answer || data.error || 'empty');
+        refreshHits();
       } catch (err) {
         add('bot', 'error', String(err));
       } finally {
