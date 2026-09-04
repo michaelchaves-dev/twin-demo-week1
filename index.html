@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Twin — Week 1 Demo</title>
+  <style>
+    :root { --bg:#0a0a0a; --line:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --accent:#00ff41; --panel:#111; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family: Inter, system-ui, sans-serif; }
+    header { border-bottom:1px solid var(--line); padding:18px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .brand { font-weight:700; letter-spacing:-.04em; }
+    .brand span { color:var(--accent); }
+    .pulse { width:8px; height:8px; background:var(--accent); border-radius:50%; display:inline-block; margin-right:8px; }
+    main { max-width:720px; margin:0 auto; padding:28px 16px 80px; }
+    .sub { color:var(--muted); font-size:14px; line-height:1.5; margin:0 0 20px; }
+    #log { display:flex; flex-direction:column; gap:12px; min-height:280px; }
+    .msg { padding:14px 16px; border:1px solid var(--line); border-radius:16px; background:var(--panel); white-space:pre-wrap; }
+    .msg.user { border-color:#374151; }
+    .msg.bot { border-color:#14532d; }
+    .layer { font-size:11px; color:var(--accent); letter-spacing:.08em; text-transform:uppercase; margin-bottom:6px; }
+    form { position:sticky; bottom:0; background:linear-gradient(transparent, var(--bg) 30%); padding:16px 0 8px; display:flex; gap:8px; }
+    input, button { font:inherit; }
+    input { flex:1; background:#111; color:var(--text); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+    button { background:var(--accent); color:#041; border:0; border-radius:12px; padding:12px 16px; font-weight:700; cursor:pointer; }
+    button:disabled { opacity:.5; }
+    .row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+    label { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">TWIN <span>v1</span></div>
+    <div style="font-size:12px;color:var(--muted)"><span class="pulse"></span>cache · A/B gates · escalate last</div>
+  </header>
+  <main>
+    <p class="sub">Week 1 demo. No GPU on this URL. Easy questions stop at Twin A. Hard ones consult Twin B. Escalation only if a Groq key is set on the host. PII-shaped strings are masked before any outbound path.</p>
+    <div class="row">
+      <label><input type="checkbox" id="localOnly" /> LOCAL_ONLY (never escalate)</label>
+    </div>
+    <div id="log"></div>
+    <form id="f">
+      <input id="q" autocomplete="off" placeholder="Ask Twin…" />
+      <button type="submit">Send</button>
+    </form>
+  </main>
+  <script>
+    const log = document.getElementById('log');
+    const f = document.getElementById('f');
+    const q = document.getElementById('q');
+    function add(role, layer, text) {
+      const d = document.createElement('div');
+      d.className = 'msg ' + role;
+      d.innerHTML = '<div class="layer"></div>';
+      d.querySelector('.layer').textContent = layer;
+      d.append(document.createTextNode(text));
+      log.appendChild(d);
+      d.scrollIntoView({ behavior: 'smooth' });
+    }
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = q.value.trim();
+      if (!text) return;
+      q.value = '';
+      add('user', 'you', text);
+      f.querySelector('button').disabled = true;
+      try {
+        const r = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ message: text, local_only: document.getElementById('localOnly').checked })
+        });
+        const data = await r.json();
+        add('bot', data.layer || 'twin', data.answer || data.error || 'empty');
+      } catch (err) {
+        add('bot', 'error', String(err));
+      } finally {
+        f.querySelector('button').disabled = false;
+        q.focus();
+      }
+    });
+  </script>
+</body>
+</html>
