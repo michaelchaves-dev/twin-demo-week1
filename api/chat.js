@@ -75,18 +75,19 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const h = crypto.createHash('sha256').update(message + '|' + localOnly).digest('hex');
+  // Key + store on scrubbed tokens so PII variants reuse L0; restore with this request's map.
+  const { out: scrubbed, map } = scrub(message);
+  const h = crypto.createHash('sha256').update(scrubbed + '|' + localOnly).digest('hex');
   if (cache.has(h)) {
     stats.l0 += 1;
-    res.status(200).json({ layer: 'L0 cache', answer: cache.get(h) + '\n\n_[cached]_' });
+    res.status(200).json({ layer: 'L0 cache', answer: restore(cache.get(h), map) + '\n\n_[cached]_' });
     return;
   }
 
-  const { out: scrubbed, map } = scrub(message);
   const a = twinA(scrubbed);
   if (!a.escalate) {
+    cache.set(h, a.text);
     const ans = restore(a.text, map);
-    cache.set(h, ans);
     stats.l2 += 1;
     res.status(200).json({ layer: 'L2 Twin-A', answer: ans });
     return;
@@ -94,8 +95,8 @@ module.exports = async (req, res) => {
 
   const b = twinB(scrubbed, a);
   if (!b.escalate) {
+    cache.set(h, b.text);
     const ans = restore(b.text, map);
-    cache.set(h, ans);
     stats.l3 += 1;
     res.status(200).json({ layer: 'L3 Twin-B', answer: ans });
     return;
@@ -111,8 +112,8 @@ module.exports = async (req, res) => {
 
   try {
     const big = await groq(scrubbed, key);
+    cache.set(h, big + '\n\n_[escalated]_');
     const ans = restore(big, map) + '\n\n_[escalated]_';
-    cache.set(h, ans);
     stats.l4_groq += 1;
     res.status(200).json({ layer: 'L4 Groq', answer: ans });
   } catch (e) {
