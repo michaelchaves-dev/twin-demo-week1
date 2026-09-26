@@ -104,7 +104,9 @@ module.exports = async (req, res) => {
 
   const key = process.env.GROQ_API_KEY;
   if (localOnly || !key) {
+    // Reuse L0 for repeat escalate+local_only (or no key) — gate answer is stable.
     const ans = 'L4 blocked — LOCAL_ONLY or no GROQ_API_KEY on this host. Rephrase smaller, or set the key and turn LOCAL_ONLY off.';
+    cache.set(h, ans);
     stats.l4_gate += 1;
     res.status(200).json({ layer: 'L4 gate', answer: ans });
     return;
