@@ -29,6 +29,11 @@ function restore(text, map) {
   return out;
 }
 
+// Collapse whitespace + trailing ? so formatting-only variants reuse L0.
+function normalizeAsk(s) {
+  return s.replace(/\s+/g, ' ').trim().replace(/\?+$/, '');
+}
+
 function twinA(q) {
   if (q.length < 80 && !HARD.test(q)) {
     return { escalate: false, text: `Twin-A: ${q.replace(/\?+$/, '')}. Cached path stays local when the ask is bounded.` };
@@ -75,8 +80,9 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Key + store on scrubbed tokens so PII variants reuse L0; restore with this request's map.
-  const { out: scrubbed, map } = scrub(message);
+  // Key + store on scrubbed+normalized tokens so PII/format variants reuse L0.
+  const { out: scrubbed0, map } = scrub(message);
+  const scrubbed = normalizeAsk(scrubbed0);
   const h = crypto.createHash('sha256').update(scrubbed + '|' + localOnly).digest('hex');
   if (cache.has(h)) {
     stats.l0 += 1;
