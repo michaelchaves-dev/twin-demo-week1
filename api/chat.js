@@ -29,9 +29,9 @@ function restore(text, map) {
   return out;
 }
 
-// Collapse whitespace + trailing ? + case so format/case variants reuse L0.
+// Collapse whitespace + trailing punct + case so format/case variants reuse L0.
 function normalizeAsk(s) {
-  return s.replace(/\s+/g, ' ').trim().replace(/\?+$/, '').toLowerCase();
+  return s.replace(/\s+/g, ' ').trim().replace(/[?.!;:]+$/, '').toLowerCase();
 }
 
 function twinA(q) {
