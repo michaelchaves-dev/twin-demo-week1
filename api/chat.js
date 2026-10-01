@@ -29,14 +29,14 @@ function restore(text, map) {
   return out;
 }
 
-// Collapse whitespace + quote wrappers + trailing punct + case so format variants reuse L0.
+// Collapse whitespace + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
 function normalizeAsk(s) {
   return s
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/^["'\u201c\u201d\u2018\u2019]+|["'\u201c\u201d\u2018\u2019]+$/gu, '')
     .trim()
-    .replace(/[?.!;:]+$/, '')
+    .replace(/[?.!;:\u2026\u2014\u2013\u2212\-]+$/u, '')
     .toLowerCase();
 }
 
