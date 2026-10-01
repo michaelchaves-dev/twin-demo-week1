@@ -29,12 +29,13 @@ function restore(text, map) {
   return out;
 }
 
-// Collapse whitespace + invisible/soft-hyphen + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
+// Collapse whitespace + invisible/soft-hyphen + curly apostrophe/prime + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
 function normalizeAsk(s) {
   return s
     .replace(/[\u200B\u200C\u200D\uFEFF\u00AD]/gu, '')
     .replace(/\s+/g, ' ')
     .trim()
+    .replace(/[\u2018\u2019\u02BC\u2032]/gu, "'")
     .replace(/^["'\u201c\u201d\u2018\u2019]+|["'\u201c\u201d\u2018\u2019]+$/gu, '')
     .trim()
     .replace(/[?.!;:\u2026\u2014\u2013\u2212\-]+$/u, '')
