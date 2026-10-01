@@ -29,9 +29,10 @@ function restore(text, map) {
   return out;
 }
 
-// Collapse whitespace + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
+// Collapse whitespace + invisible/soft-hyphen + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
 function normalizeAsk(s) {
   return s
+    .replace(/[\u200B\u200C\u200D\uFEFF\u00AD]/gu, '')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/^["'\u201c\u201d\u2018\u2019]+|["'\u201c\u201d\u2018\u2019]+$/gu, '')
