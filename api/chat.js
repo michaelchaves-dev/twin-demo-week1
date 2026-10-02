@@ -29,7 +29,7 @@ function restore(text, map) {
   return out;
 }
 
-// Collapse whitespace + invisible/soft-hyphen/bidi/format controls + fullwidth ASCII + mid-string dash variants + curly apostrophe/prime + curly/smart double quotes + guillemets/angle quotes + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
+// Collapse whitespace + invisible/soft-hyphen/bidi/format controls + fullwidth ASCII + mid-string dash/ellipsis variants + curly apostrophe/prime + curly/smart double quotes + guillemets/angle quotes + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
 function foldFullwidth(s) {
   // U+FF01–U+FF5E → ASCII 0x21–0x7E (IME/CJK fullwidth paste variants).
   return s.replace(/[\uFF01-\uFF5E]/gu, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
@@ -40,8 +40,13 @@ function foldDashes(s) {
   return s.replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/gu, '-');
 }
 
+function foldEllipsis(s) {
+  // Mid-string ellipsis variants → ASCII three dots (Word/Notes paste).
+  return s.replace(/[\u2026\u22EF\uFE19\u1801]/gu, '...');
+}
+
 function normalizeAsk(s) {
-  return foldDashes(foldFullwidth(s))
+  return foldEllipsis(foldDashes(foldFullwidth(s)))
     .replace(/[\u200B\u200C\u200D\u200E\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF\u00AD]/gu, '')
     .replace(/\s+/g, ' ')
     .trim()
