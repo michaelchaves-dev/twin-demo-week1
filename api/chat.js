@@ -29,10 +29,10 @@ function restore(text, map) {
   return out;
 }
 
-// Collapse whitespace + invisible/soft-hyphen + curly apostrophe/prime + curly/smart double quotes + guillemets/angle quotes + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
+// Collapse whitespace + invisible/soft-hyphen/bidi/format controls + curly apostrophe/prime + curly/smart double quotes + guillemets/angle quotes + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
 function normalizeAsk(s) {
   return s
-    .replace(/[\u200B\u200C\u200D\uFEFF\u00AD]/gu, '')
+    .replace(/[\u200B\u200C\u200D\u200E\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF\u00AD]/gu, '')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/[\u2018\u2019\u02BC\u2032]/gu, "'")
