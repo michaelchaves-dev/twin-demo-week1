@@ -29,7 +29,7 @@ function restore(text, map) {
   return out;
 }
 
-// Collapse whitespace + invisible/soft-hyphen + curly apostrophe/prime + curly/smart double quotes + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
+// Collapse whitespace + invisible/soft-hyphen + curly apostrophe/prime + curly/smart double quotes + guillemets/angle quotes + quote wrappers + trailing punct/ellipsis/dashes + case so format variants reuse L0.
 function normalizeAsk(s) {
   return s
     .replace(/[\u200B\u200C\u200D\uFEFF\u00AD]/gu, '')
@@ -37,7 +37,8 @@ function normalizeAsk(s) {
     .trim()
     .replace(/[\u2018\u2019\u02BC\u2032]/gu, "'")
     .replace(/[\u201C\u201D\u201E\u201F\u2033]/gu, '"')
-    .replace(/^["'\u201c\u201d\u2018\u2019]+|["'\u201c\u201d\u2018\u2019]+$/gu, '')
+    .replace(/[\u00AB\u00BB\u2039\u203A]/gu, '"')
+    .replace(/^["'\u201c\u201d\u2018\u2019\u00ab\u00bb\u2039\u203a]+|["'\u201c\u201d\u2018\u2019\u00ab\u00bb\u2039\u203a]+$/gu, '')
     .trim()
     .replace(/[?.!;:\u2026\u2014\u2013\u2212\-]+$/u, '')
     .toLowerCase();
